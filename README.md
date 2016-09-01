@@ -18,7 +18,7 @@ See `loglet --help` for up to date usage instructions.
 
 ## Authors
 
-* [Ragnar Dahlen](https://github.com/ragnard)
+* [Ragnar Dahlén](https://github.com/ragnard)
 
 ## License
 
