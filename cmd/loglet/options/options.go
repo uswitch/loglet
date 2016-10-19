@@ -50,7 +50,7 @@ func (l *Loglet) AddFlags() {
 	kingpin.Flag("broker", "kafka brokers in destination cluster").Default("localhost:9092").StringsVar(&l.KafkaBrokers)
 	kingpin.Flag("topic", "kafka topic to produce messages to").Default(l.KafkaTopic).StringVar(&l.KafkaTopic)
 	kingpin.Flag("cursor-file", "File in which to keep cursor state between runs").Default(l.CursorFile).StringVar(&l.CursorFile)
-	kingpin.Flag("extra-field", "Default extra fields to add to all log entries. Values of fields in messages take precedence").StringMapVar(&l.ExtraFields)
+	kingpin.Flag("default-field", "Default extra fields to add to all log entries. Values of fields in messages take precedence").StringMapVar(&l.ExtraFields)
 	kingpin.Flag("log-level", "Log level").Default(l.LogLevel.String()).SetValue(&LogLevelValue{&l.LogLevel})
 
 	// TODO: might resurrect these if switching to AsyncProducer
