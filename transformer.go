@@ -34,8 +34,8 @@ func NewJournalEntryTransformer(loglet *options.Loglet, entries <-chan *JournalE
 
 	var ts []types.Transformer
 
-	if loglet.ExtraFields != nil {
-		ts = append(ts, transformers.NewExtraFields(loglet.ExtraFields))
+	if loglet.DefaultFields != nil {
+		ts = append(ts, transformers.NewDefaultFields(loglet.DefaultFields))
 	}
 
 	converter := &journalEntryTransformer{
