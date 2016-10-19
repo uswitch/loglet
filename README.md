@@ -12,6 +12,12 @@ It has the following main aspirations:
 - leverage structured log data when available
 - integrate well with container management systems like ECS and kubernetes
 
+## Installing
+
+```
+$ go get github.com/uswitch/loglet/cmd/loglet
+```
+
 ## Usage
 
 See `loglet --help` for up to date usage instructions.
