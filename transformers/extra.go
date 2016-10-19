@@ -16,6 +16,9 @@ func NewExtraFields(fields map[string]string) *ExtraFields {
 
 func (p *ExtraFields) Transform(m *types.LogMessage) {
 	for k, v := range p.Fields {
-		m.Fields[k] = v
+		_, ok := m.Fields[k]
+		if !ok {
+			m.Fields[k] = v
+		}
 	}
 }
