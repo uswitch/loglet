@@ -3,8 +3,7 @@ package loglet
 import (
 	"fmt"
 	"regexp"
-
-	log "github.com/Sirupsen/logrus"
+	"strings"
 
 	"github.com/uswitch/loglet/cmd/loglet/options"
 )
@@ -15,10 +14,10 @@ type JournalEntryFilter interface {
 }
 
 type journalEntryFilter struct {
-	ret             chan error
-	entries         chan *JournalEntry
-	includeFilters map[string]string
-	excludeFilters map[string]string
+	ret            chan error
+	entries        chan *JournalEntry
+	includeFilters []map[string]string
+	excludeFilters []map[string]string
 }
 
 func NewJournalEntryFilter(loglet *options.Loglet, unfilteredEntries <-chan *JournalEntry, done <-chan struct{}) (JournalEntryFilter, error) {
@@ -36,14 +35,11 @@ func NewJournalEntryFilter(loglet *options.Loglet, unfilteredEntries <-chan *Jou
 	}
 
 	filter := &journalEntryFilter{
-		ret:             ret,
-		entries:         filteredEntries,
+		ret:            ret,
+		entries:        filteredEntries,
 		includeFilters: includeFilters,
 		excludeFilters: excludeFilters,
 	}
-
-	log.Info(includeFilters)
-	log.Info(excludeFilters)
 
 	go filter.start(unfilteredEntries, done)
 
@@ -92,29 +88,43 @@ func (j *journalEntryFilter) start(unfilteredEntries <-chan *JournalEntry, done 
 
 var filterRe = regexp.MustCompile("^([^=]+)=([^=]+)$")
 
-func parseFilters(rawFilters []string) (map[string]string, error) {
-	filters := make(map[string]string)
+func parseFilters(rawFilters []string) ([]map[string]string, error) {
+	orFilters := []map[string]string{}
 
 	for _, rawFilter := range rawFilters {
-		matches := filterRe.FindStringSubmatch(rawFilter)
+		andFilters := make(map[string]string)
 
-		log.Infof("%q %q %d", rawFilter, matches, len(matches))
+		for _, rawAndFilter := range strings.Split(rawFilter, ",") {
+			matches := filterRe.FindStringSubmatch(rawAndFilter)
 
-		if len(matches) == 0 {
-			return nil, fmt.Errorf("'%s' doesn't match expected pattern Key=Value", rawFilter)
-		} else {
-			filters[matches[1]] = matches[2]
+			if len(matches) == 0 {
+				return nil, fmt.Errorf("'%s' doesn't match expected pattern Key=Value", rawAndFilter)
+			} else {
+				andFilters[matches[1]] = matches[2]
+			}
 		}
+
+		orFilters = append(orFilters, andFilters)
 	}
 
-	return filters, nil
+	return orFilters, nil
 }
 
-func matchesFilters(filters map[string]string, fields map[string]string) bool {
-	for k, filterValue := range filters {
-		fieldValue, ok := fields[k]
+func matchesFilters(orFilters []map[string]string, fields map[string]string) bool {
 
-		if ok && fieldValue == filterValue {
+	for _, andFilters := range orFilters {
+		matched := true
+
+		for k, filterValue := range andFilters {
+			fieldValue, ok := fields[k]
+
+			if !ok || fieldValue != filterValue {
+				matched = false
+				break
+			}
+		}
+
+		if matched {
 			return true
 		}
 	}
