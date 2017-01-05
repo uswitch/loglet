@@ -33,7 +33,7 @@ publish:
 notify:
   slack:
     webhook_url: $$SLACK_WEBHOOK
-    channel: drone
+    channel: coreit
     template: |
       [{{ repo.full_name }}:{{ build.branch }}] Build <{{ system.link_url }}/{{ repo.full_name }}/{{ build.number }}|#{{ build.number }}> completed with status {{ build.status }}
 
