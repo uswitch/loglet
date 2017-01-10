@@ -17,6 +17,8 @@ type Loglet struct {
 	MaxMessageCount int
 	DefaultFields   map[string]string
 	LogLevel        log.Level
+	IncludeFilters  []string
+	ExcludeFilters  []string
 
 	// testing/debugging
 	FakeKafka  bool
@@ -52,6 +54,8 @@ func (l *Loglet) AddFlags() {
 	kingpin.Flag("cursor-file", "File in which to keep cursor state between runs").Default(l.CursorFile).StringVar(&l.CursorFile)
 	kingpin.Flag("default-field", "Default fields to add to all log entries. Values of fields in messages take precedence").StringMapVar(&l.DefaultFields)
 	kingpin.Flag("log-level", "Log level").Default(l.LogLevel.String()).SetValue(&LogLevelValue{&l.LogLevel})
+	kingpin.Flag("include-filter", "Include entries with a matching key value pair in the fields, combines as OR. Format: Key=Value").StringsVar(&l.IncludeFilters)
+	kingpin.Flag("exclude-filter", "Exclude entries with a matching key value pair in the fields, combines as OR. Format: Key=Value").StringsVar(&l.ExcludeFilters)
 
 	// TODO: might resurrect these if switching to AsyncProducer
 	// kingpin.Flag("max-message-delay", "The maximum time to buffer messages before sending to ES.").Default(l.MaxMessageDelay.String()).DurationVar(&l.MaxMessageDelay)

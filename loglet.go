@@ -22,7 +22,13 @@ func Run(loglet *options.Loglet) error {
 	}
 
 	journal := NewJournalFollower(cursor, done)
-	transformer := NewJournalEntryTransformer(loglet, journal.Entries(), done)
+
+	filter, err := NewJournalEntryFilter(loglet, journal.Entries(), done)
+	if err != nil {
+		return fmt.Errorf("unable to create filter: %s", err)
+	}
+
+	transformer := NewJournalEntryTransformer(loglet, filter.Entries(), done)
 
 	publisher, err := NewKafkaPublisher(loglet, transformer.Messages(), done)
 	if err != nil {
@@ -31,7 +37,7 @@ func Run(loglet *options.Loglet) error {
 
 	committer := NewCursorCommitter(cursorState, publisher.Published(), done)
 
-	rets := merge(journal.Ret(), transformer.Ret(), publisher.Ret(), committer.Ret())
+	rets := merge(journal.Ret(), filter.Ret(), transformer.Ret(), publisher.Ret(), committer.Ret())
 
 	sigint := make(chan os.Signal, 1)
 	signal.Notify(sigint, os.Interrupt)
