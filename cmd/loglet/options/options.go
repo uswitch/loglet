@@ -1,7 +1,6 @@
 package options
 
 import (
-	"strconv"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -9,19 +8,19 @@ import (
 )
 
 type Loglet struct {
-	KafkaBrokers    []string
-	KafkaTopic      string
-	CursorFile      string
-	MaxMessageDelay time.Duration
-	MaxMessageSize  int
-	MaxMessageCount int
-	DefaultFields   map[string]string
-	LogLevel        log.Level
-	IncludeFilters  []string
-	ExcludeFilters  []string
+	KinesisStream       string
+	KinesisPartitionKey string
+	KinesisRegion       string
+	CursorFile          string
+	MaxMessageDelay     time.Duration
+	MaxMessageSize      int
+	MaxMessageCount     int
+	DefaultFields       map[string]string
+	LogLevel            log.Level
+	IncludeFilters      []string
+	ExcludeFilters      []string
 
 	// testing/debugging
-	FakeKafka  bool
 	CpuProfile string
 	MemProfile string
 }
@@ -32,25 +31,26 @@ const (
 
 func NewLoglet() *Loglet {
 	return &Loglet{
-		KafkaBrokers:    nil,
-		KafkaTopic:      "logs",
-		CursorFile:      "loglet.cursor",
-		MaxMessageDelay: 10 * time.Second,
-		MaxMessageSize:  1 * MB,
-		MaxMessageCount: 2000,
-		DefaultFields:   make(map[string]string),
-		LogLevel:        log.InfoLevel,
+		KinesisStream:       "k8s-logs",
+		KinesisPartitionKey: "logs",
+		KinesisRegion:       "eu-west-1",
+		CursorFile:          "loglet.cursor",
+		MaxMessageDelay:     10 * time.Second,
+		MaxMessageSize:      1 * MB,
+		MaxMessageCount:     2000,
+		DefaultFields:       make(map[string]string),
+		LogLevel:            log.InfoLevel,
 
 		// testing/debugging
-		FakeKafka:  false,
 		CpuProfile: "",
 		MemProfile: "",
 	}
 }
 
 func (l *Loglet) AddFlags() {
-	kingpin.Flag("broker", "kafka brokers in destination cluster").Default("localhost:9092").StringsVar(&l.KafkaBrokers)
-	kingpin.Flag("topic", "kafka topic to produce messages to").Default(l.KafkaTopic).StringVar(&l.KafkaTopic)
+	kingpin.Flag("stream", "kinesis stream to write to").Default(l.KinesisStream).StringVar(&l.KinesisStream)
+	kingpin.Flag("partition-key", "kinesis partition key to use").Default(l.KinesisPartitionKey).StringVar(&l.KinesisPartitionKey)
+	kingpin.Flag("region", "kinesis stream region").Default(l.KinesisRegion).StringVar(&l.KinesisRegion)
 	kingpin.Flag("cursor-file", "File in which to keep cursor state between runs").Default(l.CursorFile).StringVar(&l.CursorFile)
 	kingpin.Flag("default-field", "Default fields to add to all log entries. Values of fields in messages take precedence").StringMapVar(&l.DefaultFields)
 	kingpin.Flag("log-level", "Log level").Default(l.LogLevel.String()).SetValue(&LogLevelValue{&l.LogLevel})
@@ -63,7 +63,6 @@ func (l *Loglet) AddFlags() {
 	// kingpin.Flag("max-message-count", "The maximum number of messages to buffer before sending to ES.").Default(strconv.Itoa(l.MaxMessageCount)).IntVar(&l.MaxMessageCount)
 
 	// hiden testing/debugging flags
-	kingpin.Flag("fake-kafka", "").Hidden().Default(strconv.FormatBool(l.FakeKafka)).BoolVar(&l.FakeKafka)
 	kingpin.Flag("cpu-profile", "").Hidden().Default(l.CpuProfile).StringVar(&l.CpuProfile)
 	kingpin.Flag("mem-profile", "").Hidden().Default(l.MemProfile).StringVar(&l.MemProfile)
 }

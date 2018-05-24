@@ -30,7 +30,7 @@ func Run(loglet *options.Loglet) error {
 
 	transformer := NewJournalEntryTransformer(loglet, filter.Entries(), done)
 
-	publisher, err := NewKafkaPublisher(loglet, transformer.Messages(), done)
+	publisher, err := NewKinesisPublisher(loglet, transformer.Messages(), done)
 	if err != nil {
 		return fmt.Errorf("unable to create publisher: %s", err)
 	}

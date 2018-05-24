@@ -1,40 +1,38 @@
-build:
-  image: golang:1.7.1
-  commands:
-    - go get github.com/uswitch/loglet/cmd/loglet
-    - cp $GOPATH/bin/loglet ./loglet
-publish:
-  s3:
-    access_key: $$AWS_ACCESS_KEY
-    secret_key: $$AWS_SECRET_KEY
+pipeline:
+
+  build:
+    image: golang:1.10
+    commands:
+      - go get github.com/uswitch/loglet/cmd/loglet
+      - cp $GOPATH/bin/loglet ./loglet
+
+  s3-branch:
+    image: plugins/s3
+    secrets: [ AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY ]
     acl: public-read
     region: "eu-west-1"
     bucket: "uswitch-public-tools"
     source: ./loglet
-    target: loglet/$$BRANCH/$$BUILD_NUMBER/loglet
-  s3:
-    access_key: $$AWS_ACCESS_KEY
-    secret_key: $$AWS_SECRET_KEY
+    target: loglet/${DRONE_BRANCH}/${DRONE_BUILD_NUMBER}/loglet
+
+  s3-tag:
+    when:
+      event: tag
+    image: plugins/s3
+    secrets: [ AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY ]
+    acl: public-read
+    region: "eu-west-1"
+    bucket: "uswitch-public-tools"
+    source: ./loglet
+    target: loglet/tagged/${DRONE_TAG}/loglet
+
+  s3-latest:
+    when:
+      event: tag
+    image: plugins/s3
+    secrets: [ AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY ]
     acl: public-read
     region: "eu-west-1"
     bucket: "uswitch-public-tools"
     source: ./loglet
     target: loglet/latest/loglet
-  s3:
-    when:
-      event: tag
-    access_key: $$AWS_ACCESS_KEY
-    secret_key: $$AWS_SECRET_KEY
-    acl: public-read
-    region: "eu-west-1"
-    bucket: "uswitch-public-tools"
-    source: ./loglet
-    target: loglet/tagged/$$TAG/loglet
-notify:
-  slack:
-    webhook_url: $$SLACK_WEBHOOK
-    channel: coreit
-    template: |
-      [{{ repo.full_name }}:{{ build.branch }}] Build <{{ system.link_url }}/{{ repo.full_name }}/{{ build.number }}|#{{ build.number }}> completed with status {{ build.status }}
-
-      - <{{ build.link_url }}|{{ truncate build.commit 8}}>: {{ build.message }}
